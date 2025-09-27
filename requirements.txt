@@ -1,0 +1,4 @@
+Flask>=3.0
+gunicorn>=21.2
+# DSPy core library
+dspy>=2.0

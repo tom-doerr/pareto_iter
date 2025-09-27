@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+    <h2>Problem Statement</h2>
+    <form id="evaluate-form" hx-post="{{ url_for('evaluate') }}" hx-target="#results" hx-swap="innerHTML">
+        <label for="problem" class="field-label">Describe the system you want to optimize.</label>
+        <textarea id="problem" name="problem" rows="4" required>{{ problem }}</textarea>
+
+        <label for="model" class="field-label">LLM model (OpenRouter)</label>
+        <input id="model"
+               name="model"
+               type="text"
+               value="{{ model_value }}"
+               list="model-options"
+               placeholder="openai/gpt-4o-mini">
+        <datalist id="model-options">
+            {% for option in model_options %}
+            <option value="{{ option }}"></option>
+            {% endfor %}
+        </datalist>
+
+        <label for="max-iters" class="field-label">Max improvement iterations</label>
+        <input id="max-iters"
+               name="max_iters"
+               type="number"
+               min="1"
+               max="5"
+               step="1"
+               value="{{ max_iters_value }}">
+        <p class="field-hint">Each iteration scores the latest improvement and synthesizes another candidate (more calls to the LLM).</p>
+
+        <label for="stall-limit" class="field-label">Stop after no improvement for</label>
+        <input id="stall-limit"
+               name="stall_limit"
+               type="number"
+               min="0"
+               max="5"
+               step="1"
+               value="{{ stall_limit_value }}">
+        <p class="field-hint">Number of consecutive non-improving iterations to tolerate (0 disables early stopping).</p>
+
+        <details class="iteration-help">
+            <summary>How the iteration loop works</summary>
+            <ol>
+                <li>Set <strong>Max improvement iterations</strong> higher than 1 to request multiple refinement passes (1 still yields a single improvement).</li>
+                <li>When you press <em>Evaluate Pareto Loop</em>, the app scores the current candidates, synthesizes a new proposal, scores it, and repeats until the iteration cap or stall limit is hit.</li>
+                <li>The <strong>Stall limit</strong> stops the loop early if successive improvements fail to beat the best aggregate score.</li>
+                <li>The results panel shows every generated proposal with badges so you can track which iterations helped.</li>
+            </ol>
+        </details>
+
+        <details class="criteria-section" open>
+            <summary class="criteria-summary">
+                <span>Evaluation Criteria</span>
+                <span class="criteria-count">({{ criteria|length }} total)</span>
+            </summary>
+
+            <div class="criteria-actions">
+                <button type="button"
+                        class="secondary"
+                        hx-post="{{ url_for('criterion_field') }}"
+                        hx-target="#criterion-fields"
+                        hx-swap="beforeend"
+                        hx-include="#criterion-count-wrapper">
+                    + Add Criterion
+                </button>
+            </div>
+
+            <p class="field-hint criteria-hint">Edit names and descriptions or add new criteria to tailor the rubric.</p>
+
+            <div id="criterion-fields" class="criterion-grid">
+                {% for criterion in criteria %}
+                    {% set index = loop.index %}
+                    {% include "_criterion_field.html" %}
+                {% endfor %}
+            </div>
+
+            <div id="criterion-count-wrapper">
+                <input type="hidden" id="criterion-count" name="criterion_count" value="{{ criteria|length }}">
+            </div>
+
+            <details class="rubric-guidance">
+                <summary>Scoring guidance</summary>
+                <p>All criteria are scored from 0.0 to 1.0 (higher is better). Calibrate tightly and use ~0.05 increments.</p>
+                <p>Prefer evidence-backed judgments. If information is missing, state assumptions and lower confidence.</p>
+            </details>
+        </details>
+
+        <div class="candidates-header">
+            <h2>Candidates</h2>
+            <button type="button"
+                    class="secondary"
+                    hx-post="{{ url_for('candidate_field') }}"
+                    hx-target="#candidate-fields"
+                    hx-swap="beforeend"
+                    hx-include="#candidate-count-wrapper">
+                + Add Candidate
+            </button>
+        </div>
+
+        <div id="candidate-fields" class="candidate-grid">
+            {% for candidate in candidates %}
+                {% set index = loop.index %}
+                {% include "_candidate_field.html" %}
+            {% endfor %}
+        </div>
+
+        <div id="candidate-count-wrapper">
+            <input type="hidden" id="candidate-count" name="candidate_count" value="{{ candidates|length }}">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="primary">Evaluate Pareto Loop</button>
+        </div>
+    </form>
+</section>
+
+<section id="results" class="panel results-panel">
+    <p>Submit the form to view scores, Pareto front, and the synthesized improvement.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,29 @@
+services:
+  web:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "5050:5050"
+    environment:
+      FLASK_APP: app.py
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:?OPENROUTER_API_KEY must be set}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-openai/gpt-4o-mini}
+      OPENROUTER_API_BASE: ${OPENROUTER_API_BASE:-https://openrouter.ai/api/v1}
+      OPENROUTER_SITE_URL: ${OPENROUTER_SITE_URL:-}
+      OPENROUTER_APP_TITLE: ${OPENROUTER_APP_TITLE:-}
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /app
+          ignore:
+            - .git/
+            - __pycache__/
+            - .venv/
+            - node_modules/
+        - action: rebuild
+          path: requirements.txt
+        - action: rebuild
+          path: Dockerfile
+    command: flask --app app run --host 0.0.0.0 --port 5050

@@ -1,0 +1,16 @@
+{% set name_value = criterion.name if criterion is defined else '' %}
+{% set desc_value = criterion.desc if criterion is defined else '' %}
+<div class="criterion-card">
+    <label for="criterion-name-{{ index }}" class="field-label">Criterion {{ index }} name</label>
+    <input id="criterion-name-{{ index }}"
+           name="criterion_names"
+           type="text"
+           value="{{ name_value }}"
+           placeholder="Name (e.g. Impact)">
+
+    <label for="criterion-desc-{{ index }}" class="field-label">Description</label>
+    <textarea id="criterion-desc-{{ index }}"
+              name="criterion_descs"
+              rows="3"
+              placeholder="How should this criterion be interpreted?">{{ desc_value }}</textarea>
+</div>

@@ -1,0 +1,9 @@
+{% set text_value = candidate.text if candidate is defined else '' %}
+<div class="candidate-card">
+    <label for="candidate-text-{{ index }}" class="field-label">Candidate {{ index }} artifact</label>
+    <textarea id="candidate-text-{{ index }}"
+              name="candidate_texts"
+              rows="10"
+              required>{{ text_value }}</textarea>
+    <p class="field-hint">Optional: add a `title:` key to label the candidate; otherwise we'll label it automatically.</p>
+</div>

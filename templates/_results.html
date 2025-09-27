@@ -1,0 +1,129 @@
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% else %}
+    {% if results %}
+        <section class="criteria-summary">
+            <h2>Criteria Used</h2>
+            {% if model_used %}
+            <p class="model-info">Model: <code>{{ model_identifier or model_used }}</code>{% if model_identifier and model_identifier != model_used %} (requested: <code>{{ model_used }}</code>){% endif %}</p>
+            {% endif %}
+            <ul>
+                {% for criterion in criteria_info %}
+                <li><strong>{{ criterion.name }}</strong>{% if criterion.desc %}: {{ criterion.desc }}{% endif %}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section>
+            <h2>Candidate Scores</h2>
+            <div class="score-grid">
+                {% for item in results %}
+                <article class="score-card">
+                    <header class="score-card-header">
+                        <h3>{{ item.label }}</h3>
+                        {% if item.id != item.label %}
+                        <p class="score-card-id">{{ item.id }}</p>
+                        {% endif %}
+                    </header>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Criterion</th>
+                                <th>Score</th>
+                                <th>Why</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for crit in criteria_names %}
+                            <tr>
+                                <td>{{ crit }}</td>
+                                <td>{{ '%.2f'|format(item.scores.get(crit, 0)) }}</td>
+                                <td>{{ item.justifications.get(crit, '—') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="pareto-section">
+            <h2>Pareto Front</h2>
+            <p>The following candidates are non-dominated:</p>
+            <ul>
+                {% for cid in front_ids %}
+                <li>{{ cid }}</li>
+                {% endfor %}
+            </ul>
+            <details>
+                <summary>Show Pareto context string</summary>
+                <pre>{{ pareto_context }}</pre>
+            </details>
+        </section>
+
+        <section class="improved-section">
+            <h2>LLM Improvements</h2>
+            {% if iteration_count is defined %}
+            <p class="iteration-meta">
+                Iterations run: <strong>{{ iteration_count }}</strong>
+                {% if max_iterations %}/ <span class="iteration-max">{{ max_iterations }}</span> max{% endif %}
+                {% if stall_tolerance %}<span class="iteration-divider">•</span> Stall limit {{ stall_tolerance }}{% endif %}
+                <span class="iteration-divider">•</span> No-gain iterations <strong>{{ non_improved_total }}</strong>
+                {% if trailing_no_gain and non_improved_total %}
+                <span class="iteration-streak">(current streak {{ trailing_no_gain }})</span>
+                {% endif %}
+            </p>
+            <p class="iteration-tip">Adjust the iteration settings above and run the form again to explore deeper improvement chains.</p>
+            {% endif %}
+            {% if improvements %}
+            <div class="improvement-grid">
+                {% for item in improvements %}
+                <article class="improved-card">
+                    <header class="improved-header">
+                        <h3>Iteration {{ loop.index }}</h3>
+                        <div class="improved-meta">
+                            <p class="improved-id">{{ item.id }}</p>
+                            {% if item.improved %}
+                            <span class="improve-badge improve-badge--up">Improved</span>
+                            {% elif item.scores %}
+                            <span class="improve-badge improve-badge--flat">No gain</span>
+                            {% endif %}
+                        </div>
+                    </header>
+                    {% if item.text %}
+                    <pre>{{ item.text }}</pre>
+                    {% else %}
+                    <p>No content returned.</p>
+                    {% endif %}
+                    {% if item.scores %}
+                    <table class="improved-score-table">
+                        <thead>
+                            <tr>
+                                <th>Criterion</th>
+                                <th>Score</th>
+                                <th>Why</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for crit in criteria_names %}
+                            <tr>
+                                <td>{{ crit }}</td>
+                                <td>{{ '%.2f'|format(item.scores.get(crit, 0)) }}</td>
+                                <td>{{ item.justifications.get(crit, '—') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No improvements generated.</p>
+            {% endif %}
+        </section>
+    {% else %}
+        <p>No results to display yet.</p>
+    {% endif %}
+{% endif %}
